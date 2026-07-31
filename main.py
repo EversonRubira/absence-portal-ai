@@ -63,6 +63,12 @@ Regras:
 - Tom direto, sem floreios.
 - Se uma lista vier vazia, não a menciones como problema.
 - Não sugerimas ações fora do que os dados permitem concluir.
+- O último parágrafo deve ser uma recomendação concreta e acionável, baseada
+  apenas nos alertas e sobreposições recebidos (ex.: "agendar substituição
+  para X antes de Y", "confirmar cobertura na semana de Z"). Não escrevas
+  conclusões genéricas do tipo "a gestão está a ser monitorizada" — se não
+  houver nenhum alerta ou sobreposição, diz apenas que não há ação necessária
+  neste momento.
 """
     resposta = client.chat.completions.create(
         model=MODEL,
