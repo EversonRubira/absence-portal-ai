@@ -841,6 +841,12 @@
 
     <!-- ════ VIEW: DASHBOARD ════ -->
     <div class="view active" id="view-dashboard">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn btn-secondary btn-sm" onclick="gerarResumoIA()" title="Gerar resumo do dashboard com IA">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2l1.9 5.8L20 9.5l-6.1 1.7L12 17l-1.9-5.8L4 9.5l6.1-1.7z"/></svg>
+          Gerar resumo com IA
+        </button>
+      </div>
       <div id="dash-overlap-alert" style="display:none;background:#FFEBEE;border-left:4px solid var(--acc-red);padding:10px 16px;border-radius:2px;font-size:12px;color:#B71C1C;margin-bottom:16px;"></div>
       <div id="dash-saldo-alert" style="display:none;background:#FFF3E0;border-left:4px solid var(--acc-orange);padding:10px 16px;border-radius:2px;font-size:12px;color:#BF360C;margin-bottom:16px;"></div>
       <div class="kpi-row">
@@ -1943,6 +1949,21 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('editar-ano')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveEditAnoData()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Resumo com IA -->
+<div class="modal-backdrop" id="modal-ai-resumo">
+  <div class="modal" style="width:560px;max-width:97vw;">
+    <div class="modal-header">
+      <h3>Resumo com IA</h3>
+      <button class="modal-close" onclick="closeModal('ai-resumo')">&times;</button>
+    </div>
+    <div class="modal-body" id="ai-resumo-body" style="padding:18px 22px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('ai-resumo')">Fechar</button>
     </div>
   </div>
 </div>
@@ -4773,6 +4794,78 @@ function checkAlertsForDashboard() {
     overlapEl.style.display='block';
     overlapEl.innerHTML = `<strong>🔴 Sobreposição crítica</strong> — ${overlapDays.size} dia(s) futuros com ≥${threshold} colaboradores ausentes simultaneamente. Verifique: ${sorted.slice(0,5).map(formatDate).join(', ')}${sorted.length>5?` +${sorted.length-5} mais`:''}`;
   } else { overlapEl.style.display='none'; }
+}
+
+// ─── RESUMO COM IA ──────────────────────────────────────────────
+function collectAISummaryData() {
+  const ya = getYearAbsences();
+  const SALDO_MIN = 3;
+
+  let diasGozadosTotal = 0;
+  ya.forEach(a => { diasGozadosTotal += countDays(a.start, a.end); });
+
+  // Saldo crítico — mesma regra usada em checkAlertsForDashboard
+  const alertasSaldoCritico = users.filter(u => {
+    const F = ya.filter(a=>a.userId===u.id&&(a.type==='F'||a.type==='FJ')).reduce((s,a)=>s+countDays(a.start,a.end),0);
+    const total = getUserTotalDays(u, currentYear);
+    return (total - F) <= SALDO_MIN;
+  }).map(u => {
+    const F = ya.filter(a=>a.userId===u.id&&(a.type==='F'||a.type==='FJ')).reduce((s,a)=>s+countDays(a.start,a.end),0);
+    const total = getUserTotalDays(u, currentYear);
+    return { colaborador: u.name, dias_restantes: total - F, prazo: `31/12/${currentYear}` };
+  });
+
+  // Sobreposições — mesma regra usada em checkAlertsForDashboard (≥50% da equipa, dias futuros)
+  const threshold = Math.ceil(users.length * 0.5);
+  const sobreposicoes = [];
+  if (users.length >= 2) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const lookup = {};
+    ya.forEach(a => dateRange(a.start,a.end).forEach(ds => {
+      if (ds < todayStr) return;
+      if (!lookup[ds]) lookup[ds] = new Set();
+      lookup[ds].add(a.userId);
+    }));
+    Object.entries(lookup).forEach(([ds, set]) => {
+      const dow = new Date(ds+'T12:00:00').getDay();
+      if (dow!==0 && dow!==6 && !isHolidayForAnyone(ds) && set.size>=threshold) {
+        sobreposicoes.push({
+          periodo: formatDate(ds),
+          colaboradores: [...set].map(id => getUserById(id)?.name).filter(Boolean)
+        });
+      }
+    });
+    sobreposicoes.sort((a,b) => a.periodo < b.periodo ? -1 : 1);
+  }
+
+  return {
+    ano: currentYear,
+    total_colaboradores: users.length,
+    dias_gozados_total: diasGozadosTotal,
+    alertas_saldo_critico: alertasSaldoCritico,
+    sobreposicoes: sobreposicoes
+  };
+}
+
+async function gerarResumoIA() {
+  const body = document.getElementById('ai-resumo-body');
+  body.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--acc-gray-600);">A gerar resumo...</div>`;
+  openModal('ai-resumo');
+
+  const payload = collectAISummaryData();
+
+  try {
+    const res = await fetch('http://localhost:8000/api/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    body.innerHTML = `<div style="white-space:pre-wrap;">${(data.resumo || '(sem resumo)').replace(/</g,'&lt;')}</div>`;
+  } catch (err) {
+    body.innerHTML = `<div style="background:#FFEBEE;border-left:4px solid var(--acc-red);padding:10px 16px;border-radius:2px;color:#B71C1C;font-size:12px;">Não foi possível gerar o resumo. Verifique se o serviço de IA está disponível e tente novamente.</div>`;
+  }
 }
 
 // ─── PDF EXPORT ──────────────────────────────────────────────
