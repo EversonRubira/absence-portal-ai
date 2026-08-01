@@ -505,6 +505,15 @@
   .modal-close:hover { color: var(--acc-white); }
   .modal-body { padding: 22px; }
 
+  .ai-resumo-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--acc-gray-800) var(--acc-gray-100);
+  }
+  .ai-resumo-scroll::-webkit-scrollbar { width: 10px; }
+  .ai-resumo-scroll::-webkit-scrollbar-track { background: var(--acc-gray-100); }
+  .ai-resumo-scroll::-webkit-scrollbar-thumb { background: var(--acc-gray-800); border-radius: 6px; }
+  .ai-resumo-scroll::-webkit-scrollbar-thumb:hover { background: var(--acc-black); }
+
   .form-group { margin-bottom: 16px; }
   .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--acc-gray-600); margin-bottom: 6px; display: block; }
 
@@ -1960,16 +1969,18 @@
       <h3>Resumo com IA</h3>
       <button class="modal-close" onclick="closeModal('ai-resumo')">&times;</button>
     </div>
-    <div class="modal-body" id="ai-resumo-body" style="padding:18px 22px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;">
-    </div>
-    <div style="padding:0 22px 18px;border-top:1px solid var(--acc-gray-200);">
-      <div style="font-size:12px;font-weight:600;color:var(--acc-gray-700);margin:14px 0 8px;">Perguntar à IA</div>
-      <div style="display:flex;gap:8px;">
-        <input type="text" class="form-control" id="ai-pergunta-input" placeholder="Ex.: quem está de férias na próxima semana" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();perguntarIA();}">
-        <button class="btn btn-primary btn-sm" onclick="perguntarIA()">Perguntar</button>
-        <button class="btn btn-secondary btn-sm" onclick="finalizarDialogoIA()">Finalizar diálogo</button>
+    <div class="ai-resumo-scroll" style="max-height:60vh;overflow-y:auto;">
+      <div class="modal-body" id="ai-resumo-body" style="padding:18px 22px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;">
       </div>
-      <div id="ai-pergunta-resposta" style="margin-top:10px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;"></div>
+      <div style="padding:0 22px 18px;border-top:1px solid var(--acc-gray-200);">
+        <div style="font-size:12px;font-weight:600;color:var(--acc-gray-700);margin:14px 0 8px;">Perguntar à IA</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="form-control" id="ai-pergunta-input" placeholder="Ex.: quem está de férias na próxima semana" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();perguntarIA();}">
+          <button class="btn btn-primary btn-sm" onclick="perguntarIA()">Perguntar</button>
+          <button class="btn btn-secondary btn-sm" onclick="finalizarDialogoIA()">Finalizar diálogo</button>
+        </div>
+        <div id="ai-pergunta-resposta" style="margin-top:10px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('ai-resumo')">Fechar</button>
