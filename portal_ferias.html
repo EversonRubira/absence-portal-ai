@@ -1962,6 +1962,15 @@
     </div>
     <div class="modal-body" id="ai-resumo-body" style="padding:18px 22px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;">
     </div>
+    <div style="padding:0 22px 18px;border-top:1px solid var(--acc-gray-200);">
+      <div style="font-size:12px;font-weight:600;color:var(--acc-gray-700);margin:14px 0 8px;">Perguntar à IA</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="form-control" id="ai-pergunta-input" placeholder="Ex.: quem está de férias na próxima semana" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();perguntarIA();}">
+        <button class="btn btn-primary btn-sm" onclick="perguntarIA()">Perguntar</button>
+        <button class="btn btn-secondary btn-sm" onclick="finalizarDialogoIA()">Finalizar diálogo</button>
+      </div>
+      <div id="ai-pergunta-resposta" style="margin-top:10px;font-size:13px;color:var(--acc-gray-800);line-height:1.6;"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('ai-resumo')">Fechar</button>
     </div>
@@ -4855,7 +4864,7 @@ async function gerarResumoIA() {
   const payload = collectAISummaryData();
 
   try {
-    const res = await fetch('http://localhost:8000/api/summary', {
+    const res = await fetch('https://absence-portal-ai.onrender.com/api/summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -4866,6 +4875,44 @@ async function gerarResumoIA() {
   } catch (err) {
     body.innerHTML = `<div style="background:#FFEBEE;border-left:4px solid var(--acc-red);padding:10px 16px;border-radius:2px;color:#B71C1C;font-size:12px;">Não foi possível gerar o resumo. Verifique se o serviço de IA está disponível e tente novamente.</div>`;
   }
+}
+
+function collectAbsencesForQuery() {
+  return absences.map(a => ({
+    colaborador: getUserById(a.userId)?.name || '',
+    tipo: getTypeByCode(a.type)?.name || a.type,
+    inicio: a.start,
+    fim: a.end
+  }));
+}
+
+async function perguntarIA() {
+  const input = document.getElementById('ai-pergunta-input');
+  const respostaEl = document.getElementById('ai-pergunta-resposta');
+  const pergunta = input.value.trim();
+  if (!pergunta) return;
+
+  respostaEl.innerHTML = `<div style="text-align:center;padding:10px 0;color:var(--acc-gray-600);">A pensar...</div>`;
+
+  const payload = { pergunta: pergunta, ausencias: collectAbsencesForQuery() };
+
+  try {
+    const res = await fetch('https://absence-portal-ai.onrender.com/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    respostaEl.innerHTML = `<div style="white-space:pre-wrap;">${(data.resposta || '(sem resposta)').replace(/</g,'&lt;')}</div>`;
+  } catch (err) {
+    respostaEl.innerHTML = `<div style="background:#FFEBEE;border-left:4px solid var(--acc-red);padding:10px 16px;border-radius:2px;color:#B71C1C;font-size:12px;">Não foi possível obter resposta. Verifique se o serviço de IA está disponível e tente novamente.</div>`;
+  }
+}
+
+function finalizarDialogoIA() {
+  document.getElementById('ai-pergunta-input').value = '';
+  document.getElementById('ai-pergunta-resposta').innerHTML = '';
 }
 
 // ─── PDF EXPORT ──────────────────────────────────────────────

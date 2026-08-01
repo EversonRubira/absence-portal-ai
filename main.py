@@ -100,8 +100,12 @@ def consultar(req: QueryRequest):
 Pergunta do gestor: "{req.pergunta}"
 
 Responde em português de Portugal, de forma direta, usando APENAS os dados acima.
-Se a pergunta não puder ser respondida com estes dados, diz isso claramente
-em vez de adivinhar ou inventar.
+
+Podes fazer dois tipos de coisa:
+1. Responder factos diretos sobre os registos (quem está ausente quando, quantos dias, etc.).
+2. Se o gestor pedir sugestões, insights ou opinião, podes raciocinar sobre PADRÕES visíveis nos próprios dados (ex.: sobreposição de datas entre colaboradores, concentração de ausências num período, datas próximas de feriados) e propor ações razoáveis (ex.: "considera espaçar estas duas ausências" ou "vale a pena confirmar cobertura nesse período").
+
+O que NUNCA deves fazer, em nenhum dos dois casos: inventar informação que não está nos dados — como estado de aprovação, motivo da ausência, políticas da empresa, orçamento, ou decisões que dependem de contexto que não te foi dado. Se o pedido depender de algo que não está nos dados, diz isso claramente e sugere ao gestor o que precisaria de fornecer para receber uma resposta útil, em vez de simplesmente recusar sem explicação.
 """
     resposta = client.chat.completions.create(
         model=MODEL,
