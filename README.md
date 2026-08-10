@@ -94,9 +94,12 @@ Verificação simples de que o serviço está no ar.
 python -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-export GROQ_API_KEY=a_tua_chave   # Windows: $env:GROQ_API_KEY = "a_tua_chave"
 uvicorn main:app --reload --port 8000
 ```
+
+> **Serviço descontinuado:** os endpoints `/api/summary` e `/api/query` estão
+> bloqueados (retornam `503`) — o projeto era experimental e já não está em
+> uso. Não é preciso definir `GROQ_API_KEY` para correr o backend.
 
 Depois, abre `portal_ferias.html` diretamente no browser (duplo-clique) — o
 CORS já está aberto para desenvolvimento.
@@ -115,7 +118,8 @@ precisar de escrever `curl` à mão.
 Já em produção no Render: `https://absence-portal-ai.onrender.com`.
 Qualquer `git push` para `main` faz redeploy automático.
 
-Variável de ambiente necessária no Render: `GROQ_API_KEY`.
+Serviço descontinuado — endpoints bloqueados, `GROQ_API_KEY` já não é usada
+pelo código. Pode ser removida do painel do Render.
 
 Nota: no plano gratuito, o serviço "adormece" após inatividade — o primeiro
 pedido depois de um período parado pode demorar até 50 segundos.
